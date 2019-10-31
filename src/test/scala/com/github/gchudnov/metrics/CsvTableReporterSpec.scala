@@ -1,5 +1,7 @@
 package com.github.gchudnov.metrics
 
+import com.codahale.metrics.Clock
+import com.codahale.metrics.MetricFilter
 import com.codahale.metrics.MetricRegistry
 import com.github.gchudnov.metrics.columns._
 import com.github.gchudnov.metrics.CsvTableReporter
@@ -7,9 +9,8 @@ import com.github.gchudnov.metrics.CsvTableReporter.Builder
 import java.{util => ju}
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
-import org.scalatest._
-import com.codahale.metrics.Clock
 import java.util.concurrent.TimeUnit
+import org.scalatest._
 
 class CsvTableReporterSpec extends FlatSpec with Matchers {
   "CsvTableReporter" should "get all disabled attributes if no columns are enabled" in {
@@ -34,6 +35,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       .formattedFor(timeZone)
       .convertRatesTo(TimeUnit.HOURS)
       .convertDurationsTo(TimeUnit.MINUTES)
+      .filter(MetricFilter.ALL)
       .enabledColumns(Set[Column](Mean))
 
     builder.registry shouldBe registry
@@ -46,6 +48,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     builder.durationUnit shouldBe TimeUnit.MINUTES
     builder.executor shouldBe Some(ses)
     builder.shutdownExecutorOnStop shouldBe false
+    builder.filter shouldBe MetricFilter.ALL
     builder.enabledColumns shouldBe Set[Column](Mean)
   }
 
@@ -69,5 +72,25 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
     val m = reporter.excludeDisabled(Max -> "10", Mean -> "12", Timestamp -> "123456")
     m shouldBe Map.empty[Column, String]
+  }
+
+  "sortByName" should "sort items by name" in {
+    val xs = new ju.TreeMap[String, Int]
+    xs.put("aa", 1)
+    xs.put("cc", 3)
+    xs.put("bb", 2)
+
+    val ys = CsvTableReporter.sortByName(xs)
+    ys shouldBe Seq[(String, Int)](("aa", 1), ("bb", 2), ("cc", 3))
+  }
+
+  "withCommonColumns" should "add common columns to the map" in {
+    val registry = new MetricRegistry
+    val reporter = CsvTableReporter
+      .forRegistry(registry)
+      .build()
+
+    val m = reporter.withCommonColumns("my-name", 123L, Map(Mean -> "123"))
+    m shouldBe Map() // TODO
   }
 }

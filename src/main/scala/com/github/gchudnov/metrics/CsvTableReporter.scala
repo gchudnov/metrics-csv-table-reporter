@@ -40,6 +40,8 @@ class CsvTableReporter(
     ) {
   private val Separator = ";"
 
+  import CsvTableReporter._
+
   private val dateFormat =
     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale)
   dateFormat.setTimeZone(timeZone)
@@ -95,9 +97,6 @@ class CsvTableReporter(
         )
     })
   }
-
-  private def sortByName[T](m: ju.SortedMap[String, T]) =
-    m.asScala.toSeq.sortBy(_._1)
 
   private def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
     Map(
@@ -176,7 +175,7 @@ class CsvTableReporter(
     )
   }
 
-  private def withCommonColumns(
+  private[metrics] def withCommonColumns(
       name: String,
       timestamp: Long,
       m: Map[Column, String]
@@ -320,4 +319,7 @@ object CsvTableReporter {
         Columns.ColumnAttributeMap(column)
     }
   }
+
+  private[metrics] def sortByName[T](m: ju.SortedMap[String, T]): Seq[(String, T)] =
+    m.asScala.toSeq.sortBy(_._1)
 }
