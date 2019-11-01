@@ -2,14 +2,10 @@ package com.github.gchudnov.metrics
 
 import com.codahale.metrics.{Clock, Gauge, MetricFilter, MetricRegistry}
 import com.github.gchudnov.metrics.columns._
-import com.github.gchudnov.metrics.CsvTableReporter
-import com.github.gchudnov.metrics.CsvTableReporter.Builder
 import java.{util => ju}
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-import com.codahale.metrics.MetricRegistry.MetricSupplier
 import org.scalatest._
 
 class CsvTableReporterSpec extends FlatSpec with Matchers {
@@ -108,5 +104,18 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
     val m = reporter.gaugeValues(g)
     m shouldBe Map(Value -> "10")
+  }
+
+  "counterValues" should "return the expected values" in {
+    val registry = new MetricRegistry
+    val reporter = CsvTableReporter
+      .forRegistry(registry)
+      .build()
+
+    val counter = registry.counter("counterName")
+    counter.inc(1)
+
+    val m = reporter.counterValues(counter)
+    m shouldBe Map(Count -> "1")
   }
 }

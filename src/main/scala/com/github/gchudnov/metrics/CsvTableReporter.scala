@@ -72,7 +72,7 @@ class CsvTableReporter(
     )
   }
 
-  private def counterValues(counter: Counter): Map[Column, String] = {
+  private[metrics] def counterValues(counter: Counter): Map[Column, String] = {
     Map(
       Count -> String.format(locale, "%d", counter.getCount)
     )
