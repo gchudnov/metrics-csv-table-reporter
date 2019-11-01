@@ -142,4 +142,18 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       P98 -> "1.00"
     )
   }
+
+  "meterValues" should "return the expected keys" in {
+    val registry = new MetricRegistry
+    val reporter = CsvTableReporter
+      .forRegistry(registry)
+      .build()
+
+    val meter = registry.meter("meterName")
+    meter.mark()
+
+    val m = reporter.meterValues(meter)
+    m.keySet shouldBe Set(MeanRate, M1Rate, Count, M15Rate, M5Rate)
+    m.get(Count) shouldBe Some("1")
+  }
 }

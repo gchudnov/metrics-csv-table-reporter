@@ -95,7 +95,7 @@ class CsvTableReporter(
     )
   }
 
-  private def meterValues(meter: Meter): Map[Column, String] = {
+  private[metrics] def meterValues(meter: Meter): Map[Column, String] = {
     Map(
       Count -> String.format(locale, "%d", meter.getCount),
       MeanRate -> String
