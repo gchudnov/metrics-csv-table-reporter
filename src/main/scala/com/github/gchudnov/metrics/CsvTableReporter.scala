@@ -66,7 +66,7 @@ class CsvTableReporter(
     allWithoutDisabled.foreach(printValues)
   }
 
-  private def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
+  private[metrics] def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
     Map(
       Value -> String.format(locale, "%s", gauge.getValue)
     )
