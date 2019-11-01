@@ -78,7 +78,7 @@ class CsvTableReporter(
     )
   }
 
-  private def histogramValues(histogram: Histogram): Map[Column, String] = {
+  private[metrics] def histogramValues(histogram: Histogram): Map[Column, String] = {
     val snapshot: Snapshot = histogram.getSnapshot
     Map(
       Count -> String.format(locale, "%d", histogram.getCount),

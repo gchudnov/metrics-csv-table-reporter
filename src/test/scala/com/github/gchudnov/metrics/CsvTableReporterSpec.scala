@@ -1,11 +1,10 @@
 package com.github.gchudnov.metrics
 
+import java.util.concurrent.{Executors, TimeUnit}
+import java.{util => ju}
+
 import com.codahale.metrics.{Clock, Gauge, MetricFilter, MetricRegistry}
 import com.github.gchudnov.metrics.columns._
-import java.{util => ju}
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-
 import org.scalatest._
 
 class CsvTableReporterSpec extends FlatSpec with Matchers {
@@ -59,7 +58,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     m shouldBe Map(Max -> "10")
   }
 
-    it should "exclude the disabled columns if all columns are disabled" in {
+  it should "exclude the disabled columns if all columns are disabled" in {
     val registry = new MetricRegistry
     val reporter = CsvTableReporter
       .forRegistry(registry)
@@ -117,5 +116,30 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
     val m = reporter.counterValues(counter)
     m shouldBe Map(Count -> "1")
+  }
+
+  "histogramValues" should "return the expected values" in {
+    val registry = new MetricRegistry
+    val reporter = CsvTableReporter
+      .forRegistry(registry)
+      .build()
+
+    val histogram = registry.histogram("histogramName")
+    histogram.update(1)
+
+    val m = reporter.histogramValues(histogram)
+    m shouldBe Map(
+      Mean -> "1.00",
+      P75 -> "1.00",
+      Max -> "1",
+      P999 -> "1.00",
+      Count -> "1",
+      StdDev -> "0.00",
+      P99 -> "1.00",
+      P95 -> "1.00",
+      Min -> "1",
+      P50 -> "1.00",
+      P98 -> "1.00"
+    )
   }
 }
