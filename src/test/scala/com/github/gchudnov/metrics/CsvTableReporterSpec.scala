@@ -26,6 +26,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       .shutdownExecutorOnStop(false)
       .scheduleOn(ses)
       .outputTo(System.out)
+      .withSeparator(":")
       .formattedFor(ju.Locale.CANADA)
       .withClock(clock)
       .formattedFor(timeZone)
@@ -37,6 +38,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     builder.registry shouldBe registry
 
     builder.output shouldBe System.out
+    builder.separator shouldBe ":"
     builder.locale shouldBe ju.Locale.CANADA
     builder.clock shouldBe clock
     builder.timeZone shouldBe timeZone

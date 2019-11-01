@@ -3,11 +3,11 @@ package com.github.gchudnov.metrics
 import java.io.PrintStream
 import java.text.DateFormat
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
-import java.util.{Date, Locale, TimeZone}
+import java.util.{Locale, TimeZone}
 import java.{util => ju}
-import com.github.gchudnov.metrics.columns._
 
 import com.codahale.metrics._
+import com.github.gchudnov.metrics.columns._
 
 import scala.jdk.CollectionConverters._
 
@@ -19,6 +19,7 @@ import scala.jdk.CollectionConverters._
 class CsvTableReporter(
     registry: MetricRegistry,
     output: PrintStream,
+    separator: String,
     locale: Locale,
     clock: Clock,
     timeZone: TimeZone,
@@ -38,8 +39,6 @@ class CsvTableReporter(
       shutdownExecutorOnStop,
       CsvTableReporter.calcDisabledMetricAttributes(enabledColumns).asJava
     ) {
-  private val Separator = ";"
-
   import CsvTableReporter._
 
   private val dateFormat =
@@ -55,11 +54,11 @@ class CsvTableReporter(
   ): Unit = {
     val timestamp = clock.getTime
 
-    val gauges = sortByName(jgauges).map { case (name, gauge) => withCommonColumns(name, timestamp, gaugeValues(gauge)) }
-    val counters = sortByName(jcounters).map { case (name, counter) => withCommonColumns(name, timestamp, counterValues(counter)) }
+    val gauges = sortByName(jgauges).map { case (name, gauge)             => withCommonColumns(name, timestamp, gaugeValues(gauge)) }
+    val counters = sortByName(jcounters).map { case (name, counter)       => withCommonColumns(name, timestamp, counterValues(counter)) }
     val histograms = sortByName(jhistograms).map { case (name, histogram) => withCommonColumns(name, timestamp, histogramValues(histogram)) }
-    val meters = sortByName(jmeters).map { case (name, meter) => withCommonColumns(name, timestamp, meterValues(meter)) }
-    val timers = sortByName(jtimers).map { case (name, timer) => withCommonColumns(name, timestamp, timerValues(timer)) }
+    val meters = sortByName(jmeters).map { case (name, meter)             => withCommonColumns(name, timestamp, meterValues(meter)) }
+    val timers = sortByName(jtimers).map { case (name, timer)             => withCommonColumns(name, timestamp, timerValues(timer)) }
 
     val all = gauges ++ counters ++ histograms ++ meters ++ timers
     val allWithoutDisabled = all.map(excludeDisabled)
@@ -170,24 +169,26 @@ class CsvTableReporter(
   private def printValues(values: Map[Column, String]): Unit = {
     val line = Columns.Ordered
       .map(key => values.getOrElse(key, ""))
-      .mkString(Separator)
+      .mkString(separator)
     printLine(line)
   }
 
   private def printHeader(): Unit = {
-    printLine(Columns.Ordered.mkString(Separator))
+    printLine(Columns.Ordered.mkString(separator))
   }
 
   private def printLine(line: String): Unit = {
     output.printf(locale, "%s%n", line)
   }
-
 }
 
 object CsvTableReporter {
+  val DefaultSeparator = ";"
+
   final case class Builder(
       registry: MetricRegistry,
       output: PrintStream = System.out,
+      separator: String = DefaultSeparator,
       locale: Locale = Locale.getDefault(),
       clock: Clock = Clock.defaultClock(),
       timeZone: TimeZone = TimeZone.getDefault,
@@ -221,6 +222,12 @@ object CsvTableReporter {
       */
     def formattedFor(locale: Locale): Builder =
       this.copy(locale = locale)
+
+    /**
+      * Use the provided delimited as values separator
+      */
+    def withSeparator(separator: String): Builder =
+      this.copy(separator = separator)
 
     /**
       * Use the given Clock instance for the time.
@@ -265,6 +272,7 @@ object CsvTableReporter {
       new CsvTableReporter(
         registry,
         output,
+        separator,
         locale,
         clock,
         timeZone,
