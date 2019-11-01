@@ -54,48 +54,16 @@ class CsvTableReporter(
       jtimers: ju.SortedMap[String, Timer]
   ): Unit = {
     val timestamp = clock.getTime
-    val dateTime = dateFormat.format(new Date(timestamp))
 
     val gauges = sortByName(jgauges).map { case (name, gauge) => withCommonColumns(name, timestamp, gaugeValues(gauge)) }
-    val counters = sortByName(jcounters)
-    val histograms = sortByName(jhistograms)
-    val meters = sortByName(jmeters)
-    val timers = sortByName(jtimers)
+    val counters = sortByName(jcounters).map { case (name, counter) => withCommonColumns(name, timestamp, counterValues(counter)) }
+    val histograms = sortByName(jhistograms).map { case (name, histogram) => withCommonColumns(name, timestamp, histogramValues(histogram)) }
+    val meters = sortByName(jmeters).map { case (name, meter) => withCommonColumns(name, timestamp, meterValues(meter)) }
+    val timers = sortByName(jtimers).map { case (name, timer) => withCommonColumns(name, timestamp, timerValues(timer)) }
 
-    gauges.foreach({
-      case (name, gauge) =>
-        printValues(
-          withCommonColumns(name, timestamp, gaugeValues(gauge))
-        )
-    })
-
-    counters.foreach({
-      case (name, counter) =>
-        printValues(
-          withCommonColumns(name, timestamp, counterValues(counter))
-        )
-    })
-
-    histograms.foreach({
-      case (name, histogram) =>
-        printValues(
-          withCommonColumns(name, timestamp, histogramValues(histogram))
-        )
-    })
-
-    meters.foreach({
-      case (name, meter) =>
-        printValues(
-          withCommonColumns(name, timestamp, meterValues(meter))
-        )
-    })
-
-    timers.foreach({
-      case (name, timer) =>
-        printValues(
-          withCommonColumns(name, timestamp, timerValues(timer))
-        )
-    })
+    val all = gauges ++ counters ++ histograms ++ meters ++ timers
+    val allWithoutDisabled = all.map(excludeDisabled)
+    allWithoutDisabled.foreach(printValues)
   }
 
   private def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
@@ -203,8 +171,8 @@ class CsvTableReporter(
     output.printf(locale, "%s%n", line)
   }
 
-  private[metrics] def excludeDisabled(pairs: (Column, String)*): Map[Column, String] = {
-    pairs.foldLeft(Map.empty[Column, String]) {
+  private[metrics] def excludeDisabled(vs: Map[Column, String]): Map[Column, String] = {
+    vs.foldLeft(Map.empty[Column, String]) {
       case (acc, (k, v)) =>
         if (enabledColumns.contains(k)) {
           acc + (k -> v)

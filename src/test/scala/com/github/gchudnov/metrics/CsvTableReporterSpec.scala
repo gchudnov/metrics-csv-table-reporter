@@ -59,7 +59,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       .enabledColumns(Set[Column](Max))
       .build()
 
-    val m = reporter.excludeDisabled(Max -> "10", Mean -> "12", Timestamp -> "123456")
+    val m = reporter.excludeDisabled(Map(Max -> "10", Mean -> "12", Timestamp -> "123456"))
     m shouldBe Map(Max -> "10")
   }
 
@@ -70,7 +70,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       .enabledColumns(Set.empty[Column])
       .build()
 
-    val m = reporter.excludeDisabled(Max -> "10", Mean -> "12", Timestamp -> "123456")
+    val m = reporter.excludeDisabled(Map(Max -> "10", Mean -> "12", Timestamp -> "123456"))
     m shouldBe Map.empty[Column, String]
   }
 
@@ -91,6 +91,6 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
       .build()
 
     val m = reporter.withCommonColumns("my-name", 123L, Map(Mean -> "123"))
-    m shouldBe Map() // TODO
+    m shouldBe Map(Name -> "my-name", RateUnit -> "second", DurationUnit -> "milliseconds", Mean -> "123", Timestamp -> "123")
   }
 }
