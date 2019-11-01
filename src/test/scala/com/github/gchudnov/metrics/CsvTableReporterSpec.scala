@@ -1,5 +1,6 @@
 package com.github.gchudnov.metrics
 
+import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 import java.{util => ju}
 
@@ -155,5 +156,18 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     val m = reporter.meterValues(meter)
     m.keySet shouldBe Set(MeanRate, M1Rate, Count, M15Rate, M5Rate)
     m.get(Count) shouldBe Some("1")
+  }
+
+  "timerValues" should "return the expected keys" in {
+    val registry = new MetricRegistry
+    val reporter = CsvTableReporter
+      .forRegistry(registry)
+      .build()
+
+    val timer = registry.timer("timerName")
+    timer.update(Duration.ofMillis(10))
+
+    val m = reporter.timerValues(timer)
+    m.keySet shouldBe Set(MeanRate, Mean, P75, Max, P999, M1Rate, Count, M15Rate, P99, P95, Min, P50, P98, StdDev, M5Rate)
   }
 }

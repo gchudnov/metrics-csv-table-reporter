@@ -109,7 +109,7 @@ class CsvTableReporter(
     )
   }
 
-  private def timerValues(timer: Timer): Map[Column, String] = {
+  private[metrics] def timerValues(timer: Timer): Map[Column, String] = {
     val snapshot: Snapshot = timer.getSnapshot
     Map(
       Count -> String.format(locale, "%d", timer.getCount),
@@ -156,6 +156,17 @@ class CsvTableReporter(
     )
   }
 
+  private[metrics] def excludeDisabled(vs: Map[Column, String]): Map[Column, String] = {
+    vs.foldLeft(Map.empty[Column, String]) {
+      case (acc, (k, v)) =>
+        if (enabledColumns.contains(k)) {
+          acc + (k -> v)
+        } else {
+          acc
+        }
+    }
+  }
+
   private def printValues(values: Map[Column, String]): Unit = {
     val line = Columns.Ordered
       .map(key => values.getOrElse(key, ""))
@@ -171,16 +182,6 @@ class CsvTableReporter(
     output.printf(locale, "%s%n", line)
   }
 
-  private[metrics] def excludeDisabled(vs: Map[Column, String]): Map[Column, String] = {
-    vs.foldLeft(Map.empty[Column, String]) {
-      case (acc, (k, v)) =>
-        if (enabledColumns.contains(k)) {
-          acc + (k -> v)
-        } else {
-          acc
-        }
-    }
-  }
 }
 
 object CsvTableReporter {
