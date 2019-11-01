@@ -56,7 +56,7 @@ class CsvTableReporter(
     val timestamp = clock.getTime
     val dateTime = dateFormat.format(new Date(timestamp))
 
-    val gauges = sortByName(jgauges)
+    val gauges = sortByName(jgauges).map { case (name, gauge) => withCommonColumns(name, timestamp, gaugeValues(gauge)) }
     val counters = sortByName(jcounters)
     val histograms = sortByName(jhistograms)
     val meters = sortByName(jmeters)
