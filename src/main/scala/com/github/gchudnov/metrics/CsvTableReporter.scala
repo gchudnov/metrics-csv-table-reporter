@@ -1,24 +1,24 @@
 package com.github.gchudnov.metrics
 
-import java.io.PrintStream
+import java.io.{OutputStream, OutputStreamWriter, PrintWriter}
+import java.nio.charset.StandardCharsets.UTF_8
 import java.text.DateFormat
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
-import java.util.{Date, Locale, TimeZone}
+import java.util.{Locale, TimeZone}
 import java.{util => ju}
-import com.github.gchudnov.metrics.columns._
 
 import com.codahale.metrics._
+import com.github.gchudnov.metrics.columns._
 
 import scala.jdk.CollectionConverters._
 
-// https://github.com/dropwizard/metrics/blob/3748f09b249f47a24ef868595fed4556ec5e92b1/metrics-core/src/main/java/com/codahale/metrics/CsvReporter.java
-
 /**
-  * A reporter which outputs measurements in the tabular format to a PrintStream, like System.out.
+  * A reporter which outputs measurements in the tabular format to an output stream.
   */
-class CsvTableReporter(
+final class CsvTableReporter(
     registry: MetricRegistry,
-    output: PrintStream,
+    output: PrintWriter,
+    separator: String,
     locale: Locale,
     clock: Clock,
     timeZone: TimeZone,
@@ -38,11 +38,15 @@ class CsvTableReporter(
       shutdownExecutorOnStop,
       CsvTableReporter.calcDisabledMetricAttributes(enabledColumns).asJava
     ) {
-  private val Separator = ";"
+  import CsvTableReporter._
 
   private val dateFormat =
     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale)
   dateFormat.setTimeZone(timeZone)
+
+  def writeHeader(): Unit = {
+    printHeader()
+  }
 
   override def report(
       jgauges: ju.SortedMap[String, Gauge[_]],
@@ -52,66 +56,31 @@ class CsvTableReporter(
       jtimers: ju.SortedMap[String, Timer]
   ): Unit = {
     val timestamp = clock.getTime
-    val dateTime = dateFormat.format(new Date(timestamp))
 
-    val gauges = sortByName(jgauges)
-    val counters = sortByName(jcounters)
-    val histograms = sortByName(jhistograms)
-    val meters = sortByName(jmeters)
-    val timers = sortByName(jtimers)
+    val gauges = sortByName(jgauges).map { case (name, gauge)             => withCommonColumns(name, timestamp, gaugeValues(gauge)) }
+    val counters = sortByName(jcounters).map { case (name, counter)       => withCommonColumns(name, timestamp, counterValues(counter)) }
+    val histograms = sortByName(jhistograms).map { case (name, histogram) => withCommonColumns(name, timestamp, histogramValues(histogram)) }
+    val meters = sortByName(jmeters).map { case (name, meter)             => withCommonColumns(name, timestamp, meterValues(meter)) }
+    val timers = sortByName(jtimers).map { case (name, timer)             => withCommonColumns(name, timestamp, timerValues(timer)) }
 
-    gauges.foreach({
-      case (name, gauge) =>
-        printValues(
-          withCommonColumns(name, timestamp, gaugeValues(gauge))
-        )
-    })
-
-    counters.foreach({
-      case (name, counter) =>
-        printValues(
-          withCommonColumns(name, timestamp, counterValues(counter))
-        )
-    })
-
-    histograms.foreach({
-      case (name, histogram) =>
-        printValues(
-          withCommonColumns(name, timestamp, histogramValues(histogram))
-        )
-    })
-
-    meters.foreach({
-      case (name, meter) =>
-        printValues(
-          withCommonColumns(name, timestamp, meterValues(meter))
-        )
-    })
-
-    timers.foreach({
-      case (name, timer) =>
-        printValues(
-          withCommonColumns(name, timestamp, timerValues(timer))
-        )
-    })
+    val all = gauges ++ counters ++ histograms ++ meters ++ timers
+    val allWithoutDisabled = all.map(excludeDisabled)
+    allWithoutDisabled.foreach(printValues)
   }
 
-  private def sortByName[T](m: ju.SortedMap[String, T]) =
-    m.asScala.toSeq.sortBy(_._1)
-
-  private def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
+  private[metrics] def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
     Map(
       Value -> String.format(locale, "%s", gauge.getValue)
     )
   }
 
-  private def counterValues(counter: Counter): Map[Column, String] = {
+  private[metrics] def counterValues(counter: Counter): Map[Column, String] = {
     Map(
       Count -> String.format(locale, "%d", counter.getCount)
     )
   }
 
-  private def histogramValues(histogram: Histogram): Map[Column, String] = {
+  private[metrics] def histogramValues(histogram: Histogram): Map[Column, String] = {
     val snapshot: Snapshot = histogram.getSnapshot
     Map(
       Count -> String.format(locale, "%d", histogram.getCount),
@@ -128,7 +97,7 @@ class CsvTableReporter(
     )
   }
 
-  private def meterValues(meter: Meter): Map[Column, String] = {
+  private[metrics] def meterValues(meter: Meter): Map[Column, String] = {
     Map(
       Count -> String.format(locale, "%d", meter.getCount),
       MeanRate -> String
@@ -142,7 +111,7 @@ class CsvTableReporter(
     )
   }
 
-  private def timerValues(timer: Timer): Map[Column, String] = {
+  private[metrics] def timerValues(timer: Timer): Map[Column, String] = {
     val snapshot: Snapshot = timer.getSnapshot
     Map(
       Count -> String.format(locale, "%d", timer.getCount),
@@ -176,7 +145,7 @@ class CsvTableReporter(
     )
   }
 
-  private def withCommonColumns(
+  private[metrics] def withCommonColumns(
       name: String,
       timestamp: Long,
       m: Map[Column, String]
@@ -189,23 +158,8 @@ class CsvTableReporter(
     )
   }
 
-  private def printValues(values: Map[Column, String]): Unit = {
-    val line = Columns.Ordered
-      .map(key => values.getOrElse(key, ""))
-      .mkString(Separator)
-    printLine(line)
-  }
-
-  private def printHeader(): Unit = {
-    printLine(Columns.Ordered.mkString(Separator))
-  }
-
-  private def printLine(line: String): Unit = {
-    output.printf(locale, "%s%n", line)
-  }
-
-  private[metrics] def excludeDisabled(pairs: (Column, String)*): Map[Column, String] = {
-    pairs.foldLeft(Map.empty[Column, String]) {
+  private[metrics] def excludeDisabled(vs: Map[Column, String]): Map[Column, String] = {
+    vs.foldLeft(Map.empty[Column, String]) {
       case (acc, (k, v)) =>
         if (enabledColumns.contains(k)) {
           acc + (k -> v)
@@ -214,12 +168,32 @@ class CsvTableReporter(
         }
     }
   }
+
+  private def printHeader(): Unit = {
+    printLine(Columns.Ordered.map(_.code).mkString(separator))
+    output.flush()
+  }
+
+  private def printValues(values: Map[Column, String]): Unit = {
+    val line = Columns.Ordered
+      .map(key => values.getOrElse(key, ""))
+      .mkString(separator)
+    printLine(line)
+    output.flush()
+  }
+
+  private def printLine(line: String): Unit = {
+    output.printf(locale, "%s%n", line)
+  }
 }
 
 object CsvTableReporter {
+  val DefaultSeparator = ";"
+
   final case class Builder(
       registry: MetricRegistry,
-      output: PrintStream = System.out,
+      output: OutputStream = System.out,
+      separator: String = DefaultSeparator,
       locale: Locale = Locale.getDefault(),
       clock: Clock = Clock.defaultClock(),
       timeZone: TimeZone = TimeZone.getDefault,
@@ -243,9 +217,9 @@ object CsvTableReporter {
       this.copy(executor = Some(executor))
 
     /**
-      * Write to the given PrintStream.
+      * Write to the given OutputStream.
       */
-    def outputTo(output: PrintStream): Builder =
+    def outputTo(output: OutputStream): Builder =
       this.copy(output = output)
 
     /**
@@ -253,6 +227,12 @@ object CsvTableReporter {
       */
     def formattedFor(locale: Locale): Builder =
       this.copy(locale = locale)
+
+    /**
+      * Use the provided delimited as values separator
+      */
+    def withSeparator(separator: String): Builder =
+      this.copy(separator = separator)
 
     /**
       * Use the given Clock instance for the time.
@@ -296,7 +276,8 @@ object CsvTableReporter {
     def build(): CsvTableReporter =
       new CsvTableReporter(
         registry,
-        output,
+        new PrintWriter(new OutputStreamWriter(output, UTF_8)),
+        separator,
         locale,
         clock,
         timeZone,
@@ -320,4 +301,7 @@ object CsvTableReporter {
         Columns.ColumnAttributeMap(column)
     }
   }
+
+  private[metrics] def sortByName[T](m: ju.SortedMap[String, T]): Seq[(String, T)] =
+    m.asScala.toSeq.sortBy(_._1)
 }
