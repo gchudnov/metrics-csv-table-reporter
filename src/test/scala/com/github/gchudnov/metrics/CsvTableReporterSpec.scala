@@ -1,5 +1,6 @@
 package com.github.gchudnov.metrics
 
+import java.io.{File, FileOutputStream}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 import java.{util => ju}
@@ -7,6 +8,9 @@ import java.{util => ju}
 import com.codahale.metrics.{Clock, Gauge, MetricFilter, MetricRegistry}
 import com.github.gchudnov.metrics.columns._
 import org.scalatest._
+
+import scala.io.Source
+import scala.util.Using
 
 class CsvTableReporterSpec extends FlatSpec with Matchers {
   "CsvTableReporter" should "get all disabled attributes if no columns are enabled" in {
@@ -70,6 +74,56 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
     val m = reporter.excludeDisabled(Map(Max -> "10", Mean -> "12", Timestamp -> "123456"))
     m shouldBe Map.empty[Column, String]
+  }
+
+  it should "allow to write header to a file" in {
+    val registry = new MetricRegistry
+
+    val file = File.createTempFile("csv-table-report", null)
+    file.length() shouldBe 0
+
+    Using.resource(new FileOutputStream(file, true))(out => {
+      val reporter = CsvTableReporter
+        .forRegistry(registry)
+        .outputTo(out)
+        .build()
+
+      reporter.writeHeader()
+
+      Using.resource(Source.fromFile(file))(source => {
+        val header = source.getLines.mkString
+        header shouldBe "name;ts;value;count;max;mean;min;stddev;p50;p75;p95;p98;p99;p999;m1_rate;m5_rate;m15_rate;mean_rate;rate_unit;duration_unit"
+      })
+
+      file.length() should not be 0
+    })
+  }
+
+  it should "write metrics to a file" in {
+    val registry = new MetricRegistry
+
+    val file = File.createTempFile("csv-table-report", null)
+    file.length() shouldBe 0
+
+    Using.resource(new FileOutputStream(file, true))(out => {
+      val reporter = CsvTableReporter
+        .forRegistry(registry)
+        .outputTo(out)
+        .build()
+
+      val counter = registry.counter("counter-a")
+      counter.inc()
+
+      reporter.writeHeader()
+      reporter.report()
+
+      Using.resource(Source.fromFile(file))(source => {
+        val lineCount = source.getLines.size
+        lineCount shouldBe 2
+      })
+
+      file.length() should not be 0
+    })
   }
 
   "sortByName" should "sort items by name" in {

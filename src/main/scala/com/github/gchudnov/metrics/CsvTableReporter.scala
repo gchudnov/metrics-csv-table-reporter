@@ -1,6 +1,7 @@
 package com.github.gchudnov.metrics
 
-import java.io.PrintStream
+import java.io.{OutputStream, OutputStreamWriter, PrintWriter}
+import java.nio.charset.StandardCharsets.UTF_8
 import java.text.DateFormat
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 import java.util.{Locale, TimeZone}
@@ -11,14 +12,12 @@ import com.github.gchudnov.metrics.columns._
 
 import scala.jdk.CollectionConverters._
 
-// https://github.com/dropwizard/metrics/blob/3748f09b249f47a24ef868595fed4556ec5e92b1/metrics-core/src/main/java/com/codahale/metrics/CsvReporter.java
-
 /**
-  * A reporter which outputs measurements in the tabular format to a PrintStream, like System.out.
+  * A reporter which outputs measurements in the tabular format to an output stream.
   */
-class CsvTableReporter(
+final class CsvTableReporter(
     registry: MetricRegistry,
-    output: PrintStream,
+    output: PrintWriter,
     separator: String,
     locale: Locale,
     clock: Clock,
@@ -44,6 +43,10 @@ class CsvTableReporter(
   private val dateFormat =
     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale)
   dateFormat.setTimeZone(timeZone)
+
+  def writeHeader(): Unit = {
+    printHeader()
+  }
 
   override def report(
       jgauges: ju.SortedMap[String, Gauge[_]],
@@ -166,15 +169,17 @@ class CsvTableReporter(
     }
   }
 
+  private def printHeader(): Unit = {
+    printLine(Columns.Ordered.map(_.code).mkString(separator))
+    output.flush()
+  }
+
   private def printValues(values: Map[Column, String]): Unit = {
     val line = Columns.Ordered
       .map(key => values.getOrElse(key, ""))
       .mkString(separator)
     printLine(line)
-  }
-
-  private def printHeader(): Unit = {
-    printLine(Columns.Ordered.mkString(separator))
+    output.flush()
   }
 
   private def printLine(line: String): Unit = {
@@ -187,7 +192,7 @@ object CsvTableReporter {
 
   final case class Builder(
       registry: MetricRegistry,
-      output: PrintStream = System.out,
+      output: OutputStream = System.out,
       separator: String = DefaultSeparator,
       locale: Locale = Locale.getDefault(),
       clock: Clock = Clock.defaultClock(),
@@ -212,9 +217,9 @@ object CsvTableReporter {
       this.copy(executor = Some(executor))
 
     /**
-      * Write to the given PrintStream.
+      * Write to the given OutputStream.
       */
-    def outputTo(output: PrintStream): Builder =
+    def outputTo(output: OutputStream): Builder =
       this.copy(output = output)
 
     /**
@@ -271,7 +276,7 @@ object CsvTableReporter {
     def build(): CsvTableReporter =
       new CsvTableReporter(
         registry,
-        output,
+        new PrintWriter(new OutputStreamWriter(output, UTF_8)),
         separator,
         locale,
         clock,
