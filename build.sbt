@@ -1,3 +1,4 @@
+import ReleaseTransformations._
 import Dependencies._
 import Utils._
 
@@ -62,3 +63,22 @@ lazy val lintFlags = {
       withCommon()
   }
 }
+
+releaseCrossBuild := true
+releaseTagComment := s"Release ${(version in ThisBuild).value}"
+releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}"
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  releaseStepCommandAndRemaining("+publishSigned"),
+  setNextVersion,
+  commitNextVersion,
+  pushChanges,
+  releaseStepCommandAndRemaining("sonatypeReleaseAll")
+)

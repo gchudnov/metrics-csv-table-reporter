@@ -10,6 +10,10 @@ case object Name extends Column {
   override val code: String = "name"
 }
 
+case object Kind extends Column {
+  override val code: String = "kind"
+}
+
 case object Timestamp extends Column {
   override val code: String = "ts"
 }
@@ -89,6 +93,7 @@ case object MeanRate extends Column {
 object Columns {
   val Ordered: Seq[Column] = Seq(
     Name,
+    Kind,
     Timestamp,
     Value,
     Count,
@@ -128,5 +133,5 @@ object Columns {
     MeanRate -> MetricAttribute.MEAN_RATE
   )
 
-  val All: Set[Column] = ColumnAttributeMap.keySet
+  val All: Set[Column] = Ordered.toSet
 }

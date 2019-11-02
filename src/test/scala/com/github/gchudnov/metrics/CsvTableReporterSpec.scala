@@ -92,7 +92,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
       Using.resource(Source.fromFile(file))(source => {
         val header = source.getLines.mkString
-        header shouldBe "name;ts;value;count;max;mean;min;stddev;p50;p75;p95;p98;p99;p999;m1_rate;m5_rate;m15_rate;mean_rate;rate_unit;duration_unit"
+        header shouldBe "name;kind;ts;value;count;max;mean;min;stddev;p50;p75;p95;p98;p99;p999;m1_rate;m5_rate;m15_rate;mean_rate;rate_unit;duration_unit"
       })
 
       file.length() should not be 0
@@ -159,7 +159,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     registry.gauge("g", () => g)
 
     val m = reporter.gaugeValues(g)
-    m shouldBe Map(Value -> "10")
+    m shouldBe Map(Kind -> "gauge", Value -> "10")
   }
 
   "counterValues" should "return the expected values" in {
@@ -172,7 +172,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     counter.inc(1)
 
     val m = reporter.counterValues(counter)
-    m shouldBe Map(Count -> "1")
+    m shouldBe Map(Kind -> "counter", Count -> "1")
   }
 
   "histogramValues" should "return the expected values" in {
@@ -186,6 +186,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
 
     val m = reporter.histogramValues(histogram)
     m shouldBe Map(
+      Kind -> "histogram",
       Mean -> "1.00",
       P75 -> "1.00",
       Max -> "1",
@@ -210,7 +211,7 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     meter.mark()
 
     val m = reporter.meterValues(meter)
-    m.keySet shouldBe Set(MeanRate, M1Rate, Count, M15Rate, M5Rate)
+    m.keySet shouldBe Set(Kind, MeanRate, M1Rate, Count, M15Rate, M5Rate)
     m.get(Count) shouldBe Some("1")
   }
 
@@ -224,6 +225,6 @@ class CsvTableReporterSpec extends FlatSpec with Matchers {
     timer.update(Duration.ofMillis(10))
 
     val m = reporter.timerValues(timer)
-    m.keySet shouldBe Set(MeanRate, Mean, P75, Max, P999, M1Rate, Count, M15Rate, P99, P95, Min, P50, P98, StdDev, M5Rate)
+    m.keySet shouldBe Set(Kind, MeanRate, Mean, P75, Max, P999, M1Rate, Count, M15Rate, P99, P95, Min, P50, P98, StdDev, M5Rate)
   }
 }

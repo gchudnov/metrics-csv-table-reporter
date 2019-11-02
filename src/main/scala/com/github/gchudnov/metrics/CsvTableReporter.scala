@@ -70,12 +70,14 @@ final class CsvTableReporter(
 
   private[metrics] def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
     Map(
+      Kind -> "gauge",
       Value -> String.format(locale, "%s", gauge.getValue)
     )
   }
 
   private[metrics] def counterValues(counter: Counter): Map[Column, String] = {
     Map(
+      Kind -> "counter",
       Count -> String.format(locale, "%d", counter.getCount)
     )
   }
@@ -83,6 +85,7 @@ final class CsvTableReporter(
   private[metrics] def histogramValues(histogram: Histogram): Map[Column, String] = {
     val snapshot: Snapshot = histogram.getSnapshot
     Map(
+      Kind -> "histogram",
       Count -> String.format(locale, "%d", histogram.getCount),
       Min -> String.format(locale, "%d", snapshot.getMin),
       Max -> String.format(locale, "%d", snapshot.getMax),
@@ -99,6 +102,7 @@ final class CsvTableReporter(
 
   private[metrics] def meterValues(meter: Meter): Map[Column, String] = {
     Map(
+      Kind -> "meter",
       Count -> String.format(locale, "%d", meter.getCount),
       MeanRate -> String
         .format(locale, "%2.2f", convertRate(meter.getMeanRate)),
@@ -114,6 +118,7 @@ final class CsvTableReporter(
   private[metrics] def timerValues(timer: Timer): Map[Column, String] = {
     val snapshot: Snapshot = timer.getSnapshot
     Map(
+      Kind -> "timer",
       Count -> String.format(locale, "%d", timer.getCount),
       MeanRate -> String
         .format(locale, "%2.2f", convertRate(timer.getMeanRate)),
@@ -205,13 +210,13 @@ object CsvTableReporter {
       enabledColumns: Set[Column] = Columns.All
   ) {
     /**
-      * Specifies whether or not, the executor (used for reporting) will be stopped with same time with reporter.
+      * Whether reporting executor stopped at the same time as reporter.
       */
     def shutdownExecutorOnStop(shutdownExecutorOnStop: Boolean): Builder =
       this.copy(shutdownExecutorOnStop = shutdownExecutorOnStop)
 
     /**
-      * Specifies the executor to use while scheduling reporting of metrics.
+      * The executor to use while scheduling reporting of metrics.
       */
     def scheduleOn(executor: ScheduledExecutorService): Builder =
       this.copy(executor = Some(executor))
@@ -223,25 +228,25 @@ object CsvTableReporter {
       this.copy(output = output)
 
     /**
-      * Format numbers for the given Locale.
+      * Format numbers using the given Locale.
       */
     def formattedFor(locale: Locale): Builder =
       this.copy(locale = locale)
 
     /**
-      * Use the provided delimited as values separator
+      * Delimiter to separate the values.
       */
     def withSeparator(separator: String): Builder =
       this.copy(separator = separator)
 
     /**
-      * Use the given Clock instance for the time.
+      * Clock to use to get the time.
       */
     def withClock(clock: Clock): Builder =
       this.copy(clock = clock)
 
     /**
-      * Use the given TimeZone for the time.
+      * Format time using the given TimeZone.
       */
     def formattedFor(timeZone: TimeZone): Builder =
       this.copy(timeZone = timeZone)
@@ -259,13 +264,13 @@ object CsvTableReporter {
       this.copy(durationUnit = durationUnit)
 
     /**
-      * Only report metrics which match the given filter.
+      * Report only metrics that match the given filter.
       */
     def filter(filter: MetricFilter): Builder =
       this.copy(filter = filter)
 
     /**
-      * Enable only the specified columns in the output.
+      * Enable only specified columns in the output.
       */
     def enabledColumns(columns: Set[Column]): Builder =
       this.copy(enabledColumns = columns)
