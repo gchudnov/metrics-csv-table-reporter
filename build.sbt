@@ -6,6 +6,7 @@ lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val commonSettings = Seq(
   organization := "com.github.gchudnov",
@@ -18,9 +19,10 @@ lazy val commonSettings = Seq(
   scalaVersion := scala213,
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
-    Resolver.sonatypeRepo("snapshots")
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.url("GitHubPackages", url("https://maven.pkg.github.com/gchudnov"))
   ),
-  scalacOptions ++= lintFlags.value,
+  scalacOptions ++= lintFlags.value
 )
 
 lazy val sonatypeSettings = Seq(
@@ -34,7 +36,29 @@ lazy val sonatypeSettings = Seq(
   releaseCrossBuild := true,
   releaseTagComment := s"Release ${(version in ThisBuild).value}",
   releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges,
+    releaseStepCommandAndRemaining("sonatypeReleaseAll")
+  )
+)
 
+lazy val githubSettings = Seq(
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
+  publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov"),
+  releaseCrossBuild := true,
+  releaseTagComment := s"Release ${(version in ThisBuild).value}",
+  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -53,7 +77,7 @@ lazy val sonatypeSettings = Seq(
 
 lazy val metrics = (project in file("."))
   .settings(commonSettings)
-  .settings(sonatypeSettings)
+  .settings(githubSettings)
   .settings(
     name := "metrics-csv-table-reporter",
     libraryDependencies ++= crossDependencies.value
@@ -85,8 +109,8 @@ lazy val lintFlags = {
 
 lazy val crossDependencies = {
   val common = Seq(
-      scalaTest % Test,
-      metricsCore,
+    scalaTest % Test,
+    metricsCore
   )
 
   def withCommon(values: ModuleID*) =
@@ -95,9 +119,9 @@ lazy val crossDependencies = {
   forScalaVersions {
     case (2, 12) =>
       withCommon(
-      scalaCollectionCompat,
-      utilBackports
-    )
+        scalaCollectionCompat,
+        utilBackports
+      )
 
     case (2, 13) =>
       withCommon()
@@ -105,6 +129,4 @@ lazy val crossDependencies = {
     case _ =>
       withCommon()
   }
-
 }
-
