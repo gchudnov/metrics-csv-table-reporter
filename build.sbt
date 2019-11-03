@@ -20,7 +20,6 @@ lazy val commonSettings = Seq(
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
     Resolver.sonatypeRepo("snapshots"),
-    Resolver.url("GitHubPackages", url("https://maven.pkg.github.com/gchudnov"))
   ),
   scalacOptions ++= lintFlags.value
 )
@@ -34,8 +33,6 @@ lazy val sonatypeSettings = Seq(
     else Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   releaseCrossBuild := true,
-  releaseTagComment := s"Release ${(version in ThisBuild).value}",
-  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -57,8 +54,6 @@ lazy val githubSettings = Seq(
   publishArtifact in Test := false,
   publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov"),
   releaseCrossBuild := true,
-  releaseTagComment := s"Release ${(version in ThisBuild).value}",
-  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -70,8 +65,7 @@ lazy val githubSettings = Seq(
     releaseStepCommandAndRemaining("+publishSigned"),
     setNextVersion,
     commitNextVersion,
-    pushChanges,
-    releaseStepCommandAndRemaining("sonatypeReleaseAll")
+    pushChanges
   )
 )
 
