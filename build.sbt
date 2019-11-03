@@ -4,8 +4,9 @@ import Utils._
 
 lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
-scalaVersion := scala213
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val commonSettings = Seq(
   organization := "com.github.gchudnov",
@@ -14,30 +15,72 @@ lazy val commonSettings = Seq(
   developers := List(
     Developer("gchudnov", "Grigorii Chudnov", "g.chudnov@gmail.com", url("https://github.com/gchudnov"))
   ),
-  crossScalaVersions := Seq(scala212, scala213),
+  crossScalaVersions := supportedScalaVersions,
   scalaVersion := scala213,
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
-    Resolver.sonatypeRepo("snapshots")
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.url("GitHubPackages", url("https://maven.pkg.github.com/gchudnov"))
   ),
-  scalacOptions ++= lintFlags.value,
+  scalacOptions ++= lintFlags.value
+)
+
+lazy val sonatypeSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
     else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
+  },
+  releaseCrossBuild := true,
+  releaseTagComment := s"Release ${(version in ThisBuild).value}",
+  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges,
+    releaseStepCommandAndRemaining("sonatypeReleaseAll")
+  )
+)
+
+lazy val githubSettings = Seq(
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
+  publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov"),
+  releaseCrossBuild := true,
+  releaseTagComment := s"Release ${(version in ThisBuild).value}",
+  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges,
+    releaseStepCommandAndRemaining("sonatypeReleaseAll")
+  )
 )
 
 lazy val metrics = (project in file("."))
   .settings(commonSettings)
+  .settings(githubSettings)
   .settings(
     name := "metrics-csv-table-reporter",
-    libraryDependencies ++= Seq(
-      scalaTest % Test,
-      metricsCore
-    )
+    libraryDependencies ++= crossDependencies.value
   )
 
 lazy val lintFlags = {
@@ -64,21 +107,26 @@ lazy val lintFlags = {
   }
 }
 
-releaseCrossBuild := true
-releaseTagComment := s"Release ${(version in ThisBuild).value}"
-releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}"
+lazy val crossDependencies = {
+  val common = Seq(
+    scalaTest % Test,
+    metricsCore
+  )
 
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runClean,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  releaseStepCommandAndRemaining("+publishSigned"),
-  setNextVersion,
-  commitNextVersion,
-  pushChanges,
-  releaseStepCommandAndRemaining("sonatypeReleaseAll")
-)
+  def withCommon(values: ModuleID*) =
+    common ++ values
+
+  forScalaVersions {
+    case (2, 12) =>
+      withCommon(
+        scalaCollectionCompat,
+        utilBackports
+      )
+
+    case (2, 13) =>
+      withCommon()
+
+    case _ =>
+      withCommon()
+  }
+}
