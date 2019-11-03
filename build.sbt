@@ -4,8 +4,8 @@ import Utils._
 
 lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
-scalaVersion := scala213
 
 lazy val commonSettings = Seq(
   organization := "com.github.gchudnov",
@@ -14,7 +14,7 @@ lazy val commonSettings = Seq(
   developers := List(
     Developer("gchudnov", "Grigorii Chudnov", "g.chudnov@gmail.com", url("https://github.com/gchudnov"))
   ),
-  crossScalaVersions := Seq(scala212, scala213),
+  crossScalaVersions := supportedScalaVersions,
   scalaVersion := scala213,
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
@@ -34,10 +34,7 @@ lazy val metrics = (project in file("."))
   .settings(commonSettings)
   .settings(
     name := "metrics-csv-table-reporter",
-    libraryDependencies ++= Seq(
-      scalaTest % Test,
-      metricsCore
-    )
+    libraryDependencies ++= crossDependencies.value
   )
 
 lazy val lintFlags = {
@@ -62,6 +59,31 @@ lazy val lintFlags = {
     case _ =>
       withCommon()
   }
+}
+
+lazy val crossDependencies = {
+  val common = Seq(
+      scalaTest % Test,
+      metricsCore,
+  )
+
+  def withCommon(values: ModuleID*) =
+    common ++ values
+
+  forScalaVersions {
+    case (2, 12) =>
+      withCommon(
+      scalaCollectionCompat,
+      utilBackports
+    )
+
+    case (2, 13) =>
+      withCommon()
+
+    case _ =>
+      withCommon()
+  }
+
 }
 
 releaseCrossBuild := true

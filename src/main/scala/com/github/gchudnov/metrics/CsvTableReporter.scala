@@ -71,14 +71,14 @@ final class CsvTableReporter(
   private[metrics] def gaugeValues(gauge: Gauge[_]): Map[Column, String] = {
     Map(
       Kind -> "gauge",
-      Value -> String.format(locale, "%s", gauge.getValue)
+      Value -> String.format(locale, "%s", asObject(gauge.getValue))
     )
   }
 
   private[metrics] def counterValues(counter: Counter): Map[Column, String] = {
     Map(
       Kind -> "counter",
-      Count -> String.format(locale, "%d", counter.getCount)
+      Count -> String.format(locale, "%d", asObject(counter.getCount))
     )
   }
 
@@ -86,32 +86,32 @@ final class CsvTableReporter(
     val snapshot: Snapshot = histogram.getSnapshot
     Map(
       Kind -> "histogram",
-      Count -> String.format(locale, "%d", histogram.getCount),
-      Min -> String.format(locale, "%d", snapshot.getMin),
-      Max -> String.format(locale, "%d", snapshot.getMax),
-      Mean -> String.format(locale, "%2.2f", snapshot.getMean),
-      StdDev -> String.format(locale, "%2.2f", snapshot.getStdDev),
-      P50 -> String.format(locale, "%2.2f", snapshot.getMedian), // median
-      P75 -> String.format(locale, "%2.2f", snapshot.get75thPercentile()),
-      P95 -> String.format(locale, "%2.2f", snapshot.get95thPercentile()),
-      P98 -> String.format(locale, "%2.2f", snapshot.get98thPercentile()),
-      P99 -> String.format(locale, "%2.2f", snapshot.get99thPercentile()),
-      P999 -> String.format(locale, "%2.2f", snapshot.get999thPercentile())
+      Count -> String.format(locale, "%d", asObject(histogram.getCount)),
+      Min -> String.format(locale, "%d", asObject(snapshot.getMin)),
+      Max -> String.format(locale, "%d", asObject(snapshot.getMax)),
+      Mean -> String.format(locale, "%2.2f", asObject(snapshot.getMean)),
+      StdDev -> String.format(locale, "%2.2f", asObject(snapshot.getStdDev)),
+      P50 -> String.format(locale, "%2.2f", asObject(snapshot.getMedian)), // median
+      P75 -> String.format(locale, "%2.2f", asObject(snapshot.get75thPercentile())),
+      P95 -> String.format(locale, "%2.2f", asObject(snapshot.get95thPercentile())),
+      P98 -> String.format(locale, "%2.2f", asObject(snapshot.get98thPercentile())),
+      P99 -> String.format(locale, "%2.2f", asObject(snapshot.get99thPercentile())),
+      P999 -> String.format(locale, "%2.2f", asObject(snapshot.get999thPercentile()))
     )
   }
 
   private[metrics] def meterValues(meter: Meter): Map[Column, String] = {
     Map(
       Kind -> "meter",
-      Count -> String.format(locale, "%d", meter.getCount),
+      Count -> String.format(locale, "%d", asObject(meter.getCount)),
       MeanRate -> String
-        .format(locale, "%2.2f", convertRate(meter.getMeanRate)),
+        .format(locale, "%2.2f", asObject(convertRate(meter.getMeanRate))),
       M1Rate -> String
-        .format(locale, "%2.2f", convertRate(meter.getOneMinuteRate)),
+        .format(locale, "%2.2f", asObject(convertRate(meter.getOneMinuteRate))),
       M5Rate -> String
-        .format(locale, "%2.2f", convertRate(meter.getFiveMinuteRate)),
+        .format(locale, "%2.2f", asObject(convertRate(meter.getFiveMinuteRate))),
       M15Rate -> String
-        .format(locale, "%2.2f", convertRate(meter.getFifteenMinuteRate))
+        .format(locale, "%2.2f", asObject(convertRate(meter.getFifteenMinuteRate)))
     )
   }
 
@@ -119,34 +119,34 @@ final class CsvTableReporter(
     val snapshot: Snapshot = timer.getSnapshot
     Map(
       Kind -> "timer",
-      Count -> String.format(locale, "%d", timer.getCount),
+      Count -> String.format(locale, "%d", asObject(timer.getCount)),
       MeanRate -> String
-        .format(locale, "%2.2f", convertRate(timer.getMeanRate)),
+        .format(locale, "%2.2f", asObject(convertRate(timer.getMeanRate))),
       M1Rate -> String
-        .format(locale, "%2.2f", convertRate(timer.getOneMinuteRate)),
+        .format(locale, "%2.2f", asObject(convertRate(timer.getOneMinuteRate))),
       M5Rate -> String
-        .format(locale, "%2.2f", convertRate(timer.getFiveMinuteRate)),
+        .format(locale, "%2.2f", asObject(convertRate(timer.getFiveMinuteRate))),
       M15Rate -> String
-        .format(locale, "%2.2f", convertRate(timer.getFifteenMinuteRate)),
+        .format(locale, "%2.2f", asObject(convertRate(timer.getFifteenMinuteRate))),
       Min -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.getMin.toDouble)),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.getMin.toDouble))),
       Max -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.getMax.toDouble)),
-      Mean -> String.format(locale, "%2.2f", convertDuration(snapshot.getMean)),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.getMax.toDouble))),
+      Mean -> String.format(locale, "%2.2f", asObject(convertDuration(snapshot.getMean))),
       StdDev -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.getStdDev)),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.getStdDev))),
       P50 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.getMedian)),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.getMedian))),
       P75 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.get75thPercentile())),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.get75thPercentile()))),
       P95 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.get95thPercentile())),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.get95thPercentile()))),
       P98 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.get98thPercentile())),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.get98thPercentile()))),
       P99 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.get99thPercentile())),
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.get99thPercentile()))),
       P999 -> String
-        .format(locale, "%2.2f", convertDuration(snapshot.get999thPercentile()))
+        .format(locale, "%2.2f", asObject(convertDuration(snapshot.get999thPercentile())))
     )
   }
 
@@ -157,7 +157,7 @@ final class CsvTableReporter(
   ): Map[Column, String] = {
     m ++ Map(
       Name -> name,
-      Timestamp -> String.format(locale, "%d", timestamp),
+      Timestamp -> String.format(locale, "%d", asObject(timestamp)),
       RateUnit -> String.format(locale, "%s", getRateUnit),
       DurationUnit -> String.format(locale, "%s", getDurationUnit)
     )
@@ -309,4 +309,8 @@ object CsvTableReporter {
 
   private[metrics] def sortByName[T](m: ju.SortedMap[String, T]): Seq[(String, T)] =
     m.asScala.toSeq.sortBy(_._1)
+
+  private def asObject[T](value: T): java.lang.Object = {
+    value.asInstanceOf[java.lang.Object]
+  }
 }
