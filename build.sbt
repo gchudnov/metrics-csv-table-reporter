@@ -21,17 +21,39 @@ lazy val commonSettings = Seq(
     Resolver.sonatypeRepo("snapshots")
   ),
   scalacOptions ++= lintFlags.value,
+)
+
+lazy val sonatypeSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
     else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
+  },
+  releaseCrossBuild := true,
+  releaseTagComment := s"Release ${(version in ThisBuild).value}",
+  releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}",
+
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges,
+    releaseStepCommandAndRemaining("sonatypeReleaseAll")
+  )
 )
 
 lazy val metrics = (project in file("."))
   .settings(commonSettings)
+  .settings(sonatypeSettings)
   .settings(
     name := "metrics-csv-table-reporter",
     libraryDependencies ++= crossDependencies.value
@@ -86,21 +108,3 @@ lazy val crossDependencies = {
 
 }
 
-releaseCrossBuild := true
-releaseTagComment := s"Release ${(version in ThisBuild).value}"
-releaseCommitMessage := s"Set version to ${(version in ThisBuild).value}"
-
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runClean,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  releaseStepCommandAndRemaining("+publishSigned"),
-  setNextVersion,
-  commitNextVersion,
-  pushChanges,
-  releaseStepCommandAndRemaining("sonatypeReleaseAll")
-)
