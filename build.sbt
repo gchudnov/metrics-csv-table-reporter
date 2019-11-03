@@ -52,7 +52,7 @@ lazy val sonatypeSettings = Seq(
 lazy val githubSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
-  publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov"),
+  publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov/metrics-csv-table-reporter"),
   releaseCrossBuild := true,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
