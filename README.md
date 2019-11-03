@@ -6,7 +6,7 @@ Capture metrics to a single csv table.
 
 ![](https://github.com/gchudnov/metrics-csv-table-reporter/workflows/Scala%20CI/badge.svg)
 
-<br clear="right"> <!-- Turn off the wrapping for the logo image. -->
+<br clear="right"<!-- Turn off the wrapping for the logo image. -->
 
 ## Usage
 
@@ -14,6 +14,19 @@ Add the following dependency to your `build.sbt`:
 
 ```scala
 libraryDependencies += "com.github.gchudnov" %% "metrics-csv-table-reporter" % "1.0.0"
+```
+
+Optionally, add github [credentials](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) and package repository resolver to `build.sbt`:
+
+```scala
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+resolvers += Resolver.url("GitHub Package Registry", url("https://maven.pkg.github.com/gchudnov/metrics-csv-table-reporter"))
+
+// cat ~/.sbt/.credentials
+// realm=GitHub Package Registry
+// host=maven.pkg.github.com
+// user=USER
+// password=TOKEN
 ```
 
 In your code, import `com.github.gchudnov.metrics.CsvTableReporter`, construct and start the reporter:
