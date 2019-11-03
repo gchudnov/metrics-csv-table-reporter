@@ -1,12 +1,12 @@
 # metrics-csv-table-reporter
 
-<img src="docs/metrics-csv-table-reporter.png" width="120px" height="120px" align="right">
+<img src="docs/metrics-csv-table-reporter.png" width="120px" height="120px" align="right" />
 
 Capture metrics to a single csv table.
 
 ![](https://github.com/gchudnov/metrics-csv-table-reporter/workflows/Scala%20CI/badge.svg)
 
-<br clear="right"<!-- Turn off the wrapping for the logo image. -->
+<br clear="right" /><!-- Turn off the wrapping for the logo image. -->
 
 ## Usage
 
