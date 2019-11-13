@@ -13,7 +13,7 @@ Capture metrics to a single csv table.
 Add the following dependency to your `build.sbt`:
 
 ```scala
-libraryDependencies += "com.github.gchudnov" %% "metrics-csv-table-reporter" % "1.0.0"
+libraryDependencies += "com.github.gchudnov" %% "metrics-csv-table-reporter" % "1.0.1"
 ```
 
 Optionally, add github [credentials](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) and package repository resolver to `build.sbt`:

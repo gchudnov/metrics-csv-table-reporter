@@ -6,20 +6,28 @@ lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
-credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+credentials ++= Seq(
+  Credentials(Path.userHome / ".sbt" / ".credentials-github"),
+  Credentials(Path.userHome / ".sbt" / ".credentials-sonatype")
+)
 
 lazy val commonSettings = Seq(
   organization := "com.github.gchudnov",
   homepage := Some(url("https://github.com/gchudnov/metrics-csv-table-reporter")),
   licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/gchudnov/metrics-csv-table-reporter"),
+      "scm:git@github.com:gchudnov/metrics-csv-table-reporter.git"
+    )
+  ),
   developers := List(
-    Developer("gchudnov", "Grigorii Chudnov", "g.chudnov@gmail.com", url("https://github.com/gchudnov"))
+    Developer(id = "gchudnov", name = "Grigorii Chudnov", email = "g.chudnov@gmail.com", url = url("https://github.com/gchudnov"))
   ),
   crossScalaVersions := supportedScalaVersions,
   scalaVersion := scala213,
   resolvers ++= Seq(
-    Resolver.sonatypeRepo("releases"),
-    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases")
   ),
   scalacOptions ++= lintFlags.value
 )
@@ -27,12 +35,9 @@ lazy val commonSettings = Seq(
 lazy val sonatypeSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
+  publishTo := Some("Sonatype Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
   releaseCrossBuild := true,
+  releaseIgnoreUntrackedFiles := true,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -42,10 +47,10 @@ lazy val sonatypeSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("sonatypeReleaseAll"),
     setNextVersion,
     commitNextVersion,
     pushChanges,
-    releaseStepCommandAndRemaining("sonatypeReleaseAll")
   )
 )
 
@@ -54,6 +59,7 @@ lazy val githubSettings = Seq(
   publishArtifact in Test := false,
   publishTo := Some("GitHubPackages" at "https://maven.pkg.github.com/gchudnov/metrics-csv-table-reporter"),
   releaseCrossBuild := true,
+  releaseIgnoreUntrackedFiles := true,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -71,7 +77,7 @@ lazy val githubSettings = Seq(
 
 lazy val metrics = (project in file("."))
   .settings(commonSettings)
-  .settings(githubSettings)
+  .settings(sonatypeSettings)
   .settings(
     name := "metrics-csv-table-reporter",
     libraryDependencies ++= crossDependencies.value
