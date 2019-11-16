@@ -87,10 +87,10 @@ The output contains the following columns:
 - `p98` - 98th percentile.
 - `p99` - 99th percentile.
 - `p999` - 99.9th percentile.
-- `m1_rate` - 1-minute exponentially-weighted moving average rate.
-- `m5_rate` - 5-minute exponentially-weighted moving average rate.
-- `m15_rate` - 15-minute exponentially-weighted moving average rate.
-- `mean_rate` - mean rate, `[1/rate_unit]`.
+- `m1_rate` - 1-minute exponentially-weighted moving average rate, measured in `[1/rate_unit]`.
+- `m5_rate` - 5-minute exponentially-weighted moving average rate, measured in `[1/rate_unit]`.
+- `m15_rate` - 15-minute exponentially-weighted moving average rate, measured in `[1/rate_unit]`.
+- `mean_rate` - mean rate, measured in `[1/rate_unit]`.
 - `rate_unit` - time unit used to measure the rate, e.g. `second`.
 - `duration_unit` - time unit used to measure the duration, e.g. `milliseconds`.
 
